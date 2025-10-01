@@ -1,0 +1,17 @@
+{
+  "name": "mamo-univers",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd apps/backend && source .venv/bin/activate && python -m flask run",
+    "dev:frontend": "cd apps/frontend && npm run dev",
+    "test": "./scripts/run-tests.sh",
+    "lint": "cd apps/frontend && npm run lint",
+    "build": "cd apps/frontend && npm run build",
+    "docker:up": "docker-compose up --build",
+    "docker:down": "docker-compose down",
+    "setup": "./scripts/setup-dev.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
