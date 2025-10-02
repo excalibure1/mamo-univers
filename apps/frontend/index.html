@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>MAMO Crypto Univers - IA Quantique Web3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-black text-slate-100">
+  <div class="max-w-5xl mx-auto p-6">
+    <header class="mb-6">
+      <h1 class="text-2xl sm:text-3xl font-bold">MAMO Crypto Univers</h1>
+      <p class="text-slate-300">IA Quantique · Web3 · Backend <span id="backendUrl" class="font-mono"></span></p>
+    </header>
+
+    <section class="grid gap-4 sm:grid-cols-2 mb-6">
+      <div class="rounded-2xl p-5 bg-slate-800/50 border border-slate-700">
+        <h2 class="font-semibold mb-3">Statut Backend</h2>
+        <div id="status" class="text-sm">Vérification…</div>
+        <button id="checkBtn" class="mt-3 px-3 py-2 rounded-xl bg-slate-200 text-slate-900">Re-vérifier</button>
+      </div>
+      <div class="rounded-2xl p-5 bg-slate-800/50 border border-slate-700">
+        <h2 class="font-semibold mb-3">Portefeuille</h2>
+        <div id="wallet" class="text-sm">Non connecté</div>
+        <button id="connectBtn" class="mt-3 px-3 py-2 rounded-xl bg-indigo-400/90 text-black">Connecter MetaMask</button>
+      </div>
+    </section>
+
+    <section class="rounded-2xl p-5 bg-slate-800/50 border border-slate-700 mb-6">
+      <h2 class="font-semibold mb-3">Poser une question à MAMO</h2>
+      <div class="flex gap-2">
+        <input id="q" class="flex-1 px-3 py-2 rounded-xl bg-slate-900/70 border border-slate-700" placeholder="Ex: Analyse BTC sur 24h"/>
+        <button id="askBtn" class="px-3 py-2 rounded-xl bg-emerald-400/90 text-black">Demander</button>
+      </div>
+      <pre id="answer" class="mt-4 text-xs whitespace-pre-wrap"></pre>
+    </section>
+
+    <section class="rounded-2xl p-5 bg-slate-800/50 border border-slate-700">
+      <h2 class="font-semibold mb-3">Marché (demo)</h2>
+      <canvas id="chart" height="120"></canvas>
+    </section>
+  </div>
+
+<script>
+const BACKEND = (window.BACKEND || "http://localhost:8000");
+document.getElementById('backendUrl').textContent = BACKEND;
+
+async function checkStatus(){
+  try{
+    const res = await fetch(BACKEND + "/healthz",{cache:"no-store"});
+    const ok = res.ok;
+    let txt = ok ? "✅ /healthz OK" : "❌ /healthz NOK " + res.status;
+    try{
+      const st = await fetch(BACKEND + "/api/status",{cache:"no-store"});
+      txt += st.ok ? " · ✅ /api/status OK" : " · ❌ /api/status NOK " + st.status;
+    }catch(e){}
+    document.getElementById('status').textContent = txt;
+  }catch(e){
+    document.getElementById('status').textContent = "❌ Backend injoignable ("+e.message+")";
+  }
+}
+
+document.getElementById('checkBtn').onclick = checkStatus;
+checkStatus();
+
+document.getElementById('connectBtn').onclick = async ()=>{
+  if(!window.ethereum){ alert("MetaMask non détecté"); return; }
+  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  const addr = accounts[0];
+  document.getElementById('wallet').textContent = "Connecté: " + addr;
+};
+
+document.getElementById('askBtn').onclick = async ()=>{
+  const q = document.getElementById('q').value.trim();
+  if(!q){ return; }
+  try{
+    const r = await fetch(BACKEND + "/api/ask", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ question:q })
+    });
+    const data = await r.json().catch(()=>({raw:r.status+" "+r.statusText}));
+    document.getElementById('answer').textContent = JSON.stringify(data, null, 2);
+  }catch(e){
+    document.getElementById('answer').textContent = "Erreur: "+e.message;
+  }
+};
+
+// mini chart démo
+const ctx = document.getElementById('chart').getContext('2d');
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: Array.from({length: 20}, (_,i)=> i.toString()),
+    datasets: [{ label: 'Indice Démo', data: Array.from({length:20}, ()=> Math.random()*100) }]
+  },
+  options: { responsive: true, maintainAspectRatio: false }
+});
+</script>
+</body>
+</html>
